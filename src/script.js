@@ -9,7 +9,8 @@ const canvas = document.querySelector('canvas.webgl')
 // Sizes
 const sizes = {
     width: 800,
-    height: 600
+    height: 600,
+    aspectRatio: 800 / 600
 }
 
 // Scene
@@ -23,12 +24,23 @@ const mesh = new THREE.Mesh(
 scene.add(mesh)
 
 // Camera
-const camera = new THREE.PerspectiveCamera(
-    75, // field of view : between 0 and 180 but in general 45 to 75
-    sizes.width / sizes.height, // aspect ratio
-    0.1, // near clipping plane : the minimum distance that the camera can see
-    100 // far clipping plane : the maximum distance that the camera can see
-    // if the object is outside of this range, it will not be rendered
+// const camera = new THREE.PerspectiveCamera(
+//     75, // field of view : between 0 and 180 but in general 45 to 75
+//     sizes.width / sizes.height, // aspect ratio
+//     0.1, // near clipping plane : the minimum distance that the camera can see
+//     100 // far clipping plane : the maximum distance that the camera can see
+//     // if the object is outside of this range, it will not be rendered
+// )
+
+const camera = new THREE.OrthographicCamera(
+    -1 * sizes.aspectRatio, // the left edge of the camera
+    1 * sizes.aspectRatio, // right
+    1, // top
+    -1, // bottom
+    0.1, // near clipping plane
+    100 // far clipping plane
+    // we need aspect ratio to make sure that the object is not stretched
+
 )
 camera.position.x = 2
 camera.position.y = 2
