@@ -23,7 +23,13 @@ const mesh = new THREE.Mesh(
 scene.add(mesh)
 
 // Camera
-const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height)
+const camera = new THREE.PerspectiveCamera(
+    75, // field of view : between 0 and 180 but in general 45 to 75
+    sizes.width / sizes.height, // aspect ratio
+    0.1, // near clipping plane : the minimum distance that the camera can see
+    100 // far clipping plane : the maximum distance that the camera can see
+    // if the object is outside of this range, it will not be rendered
+)
 camera.position.x = 2
 camera.position.y = 2
 camera.position.z = 2
