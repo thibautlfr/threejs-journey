@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js'
 import gsap from 'gsap'
 import GUI from 'lil-gui'
 
@@ -24,29 +24,48 @@ const scene = new THREE.Scene()
 debugObject.color = '#427bff'
 
 const geometry = new THREE.BoxGeometry(1, 1, 1, 2, 2, 2)
-const material = new THREE.MeshBasicMaterial({ color: debugObject.color })
+const material = new THREE.MeshBasicMaterial({
+        color: debugObject.color,
+        wireframe: true
+    }
+)
 const mesh = new THREE.Mesh(geometry, material)
 scene.add(mesh)
 
-gui.add(mesh.position, 'y')
+const cubeTweaks = gui.addFolder('Cube')
+// cubeTweaks.close()
+
+cubeTweaks.add(mesh.position, 'y')
     .min(-3)
     .max(3)
     .step(0.01)
     .name('elevation')
 
-gui.add(mesh, 'visible')
-gui.add(material, 'wireframe')
+cubeTweaks.add(mesh, 'visible')
+cubeTweaks.add(material, 'wireframe')
 
-gui.addColor(debugObject, 'color')
+cubeTweaks.addColor(debugObject, 'color')
     .onChange(() => {
         material.color.set(debugObject.color)
     })
 
 debugObject.spin = () => {
-    gsap.to(mesh.rotation, { duration: 1, y: mesh.rotation.y + Math.PI * 2 })
+    gsap.to(mesh.rotation, {duration: 1, y: mesh.rotation.y + Math.PI * 2})
 }
 
-gui.add(debugObject, 'spin')
+cubeTweaks.add(debugObject, 'spin')
+
+debugObject.subdivision = 2
+cubeTweaks.add(debugObject, 'subdivision')
+    .min(1)
+    .max(20)
+    .step(1)
+    .onFinishChange(() => {
+        mesh.geometry.dispose()
+        mesh.geometry = new THREE.BoxGeometry(
+            1, 1, 1,
+            debugObject.subdivision, debugObject.subdivision, debugObject.subdivision)
+    })
 
 /**
  * Sizes
@@ -56,8 +75,7 @@ const sizes = {
     height: window.innerHeight
 }
 
-window.addEventListener('resize', () =>
-{
+window.addEventListener('resize', () => {
     // Update sizes
     sizes.width = window.innerWidth
     sizes.height = window.innerHeight
@@ -99,8 +117,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
  */
 const clock = new THREE.Clock()
 
-const tick = () =>
-{
+const tick = () => {
     const elapsedTime = clock.getElapsedTime()
 
     // Update controls
