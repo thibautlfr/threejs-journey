@@ -6,22 +6,25 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
  */
 
 const loadingManager = new THREE.LoadingManager()
-loadingManager.onStart = () => {
-  console.log("loading started")
-}
-loadingManager.onLoad = () => {
-  console.log("loading finished")
-}
-loadingManager.onProgress = () => {
-  console.log("loading progressing")
-}
-loadingManager.onError = () => {
-  console.log("loading error")
-}
+// loadingManager.onStart = () => {
+//   console.log("loading started")
+// }
+// loadingManager.onLoad = () => {
+//   console.log("loading finished")
+// }
+// loadingManager.onProgress = () => {
+//   console.log("loading progressing")
+// }
+// loadingManager.onError = () => {
+//   console.log("loading error")
+// }
 
 const textureLoader = new THREE.TextureLoader(loadingManager)
 
-const colorTexture = textureLoader.load("/textures/door/color.jpg")
+// const colorTexture = textureLoader.load("/textures/door/color.jpg")
+// const colorTexture = textureLoader.load("/textures/checkerboard-1024x1024.png")
+// const colorTexture = textureLoader.load("/textures/checkerboard-8x8.png")
+const colorTexture = textureLoader.load("/textures/minecraft.png")
 const alphaTexture = textureLoader.load("/textures/door/alpha.jpg")
 const heightTexture = textureLoader.load("/textures/door/height.jpg")
 const normalTexture = textureLoader.load("/textures/door/normal.jpg")
@@ -37,6 +40,22 @@ ambientOcclusionTexture.colorSpace = THREE.SRGBColorSpace
 metalnessTexture.colorSpace = THREE.SRGBColorSpace
 roughnessTexture.colorSpace = THREE.SRGBColorSpace
 
+// colorTexture.repeat.x = 2
+// colorTexture.repeat.y = 3
+// colorTexture.wrapS = THREE.RepeatWrapping
+// colorTexture.wrapT = THREE.RepeatWrapping 
+
+// colorTexture.offset.x = 0.5
+// colorTexture.offset.y = 0.5
+
+// colorTexture.rotation = Math.PI * 0.25
+// colorTexture.center.x = 0.5
+// colorTexture.center.y = 0.5
+
+colorTexture.generateMipmaps = false
+colorTexture.minFilter = THREE.NearestFilter
+colorTexture.magFilter = THREE.NearestFilter
+
 /**
  * Base
  */
@@ -46,15 +65,37 @@ const canvas = document.querySelector("canvas.webgl")
 // Scene
 const scene = new THREE.Scene()
 
+// Group
+const group = new THREE.Group()
+scene.add(group)
+
 /**
  * Object
  */
 const geometry = new THREE.BoxGeometry(1, 1, 1)
-const material = new THREE.MeshBasicMaterial({ 
+const material = new THREE.MeshBasicMaterial({
   map: colorTexture
 })
 const mesh = new THREE.Mesh(geometry, material)
-scene.add(mesh)
+
+const positions = [
+  { x: -0.5, y: 0 },   // base
+  { x: -1.5, y: 1 },
+  { x: 0.5, y: 1 },
+  { x: -2.5, y: 2 },
+  { x: 1.5, y: 2 },
+  { x: -2.5, y: 3 },
+  { x: 1.5, y: 3 },
+  { x: -1.5, y: 4 },
+  { x: 0.5, y: 4 },
+  { x: -0.5, y: 3 }
+];
+
+positions.forEach(pos => {
+  const clone = mesh.clone();
+  clone.position.set(pos.x, pos.y, 0);
+  group.add(clone);
+});
 
 /**
  * Sizes
@@ -89,8 +130,8 @@ const camera = new THREE.PerspectiveCamera(
   100
 )
 camera.position.x = 1
-camera.position.y = 1
-camera.position.z = 1
+camera.position.y = 3
+camera.position.z = 5
 scene.add(camera)
 
 // Controls
@@ -113,6 +154,9 @@ const clock = new THREE.Clock()
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime()
+
+  // Update objects
+  group.rotation.y = elapsedTime
 
   // Update controls
   controls.update()
