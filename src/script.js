@@ -1,7 +1,6 @@
 import * as THREE from 'three'
-import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import GUI from 'lil-gui'
-import {FontLoader, TextGeometry} from "three/addons";
 
 /**
  * Base
@@ -15,74 +14,51 @@ const canvas = document.querySelector('canvas.webgl')
 // Scene
 const scene = new THREE.Scene()
 
-// Axes helper
-// const axesHelper = new THREE.AxesHelper()
-// scene.add(axesHelper)
+/**
+ * Lights
+ */
+const ambientLight = new THREE.AmbientLight(0xffffff, 1.5)
+scene.add(ambientLight)
+
+const pointLight = new THREE.PointLight(0xffffff, 50)
+pointLight.position.x = 2
+pointLight.position.y = 3
+pointLight.position.z = 4
+scene.add(pointLight)
 
 /**
- * Textures
+ * Objects
  */
-const textureLoader = new THREE.TextureLoader()
-const matcapTexture = textureLoader.load('/textures/matcaps/1.png')
-matcapTexture.colorSpace = THREE.SRGBColorSpace
+// Material
+const material = new THREE.MeshStandardMaterial()
+material.roughness = 0.4
 
-/**
- * Fonts
- */
-const fontLoader = new FontLoader()
-
-fontLoader.load(
-    '/fonts/helvetiker_regular.typeface.json',
-    (font) => {
-        const text = 'Thibaut Lefrancois'
-        const textGeometry = new TextGeometry(
-            text,
-            {
-                font: font,
-                size: 0.4,
-                depth: 0.1,
-                curveSegments: 5,
-                bevelEnabled: true,
-                bevelThickness: 0.03,
-                bevelSize: 0.02,
-                bevelOffset: 0,
-                bevelSegments: 4
-            }
-        )
-        textGeometry.computeBoundingBox()
-        // textGeometry.translate(
-        //     -(textGeometry.boundingBox.max.x - 0.02) * 0.5,
-        //     -(textGeometry.boundingBox.max.y - 0.02) * 0.5,
-        //     -(textGeometry.boundingBox.max.z - 0.03) * 0.5
-        // )
-        textGeometry.center()
-
-        // const material = new THREE.MeshMatcapMaterial({matcap: matcapTexture})
-        const material = new THREE.MeshNormalMaterial()
-
-        const textMesh = new THREE.Mesh(textGeometry, material)
-        scene.add(textMesh)
-
-        const donutGeometry = new THREE.TorusGeometry(0.3, 0.2, 20, 45)
-
-        for(let i=0; i < 500; i++){
-            const donutMesh = new THREE.Mesh(donutGeometry, material)
-
-            donutMesh.position.x = (Math.random() - 0.5) * 10
-            donutMesh.position.y = (Math.random() - 0.5) * 10
-            donutMesh.position.z = (Math.random() - 0.5) * 10
-
-            donutMesh.rotation.x = Math.random() * Math.PI
-            donutMesh.rotation.y = Math.random() * Math.PI
-
-            const scale = Math.random()
-            donutMesh.scale.set(scale, scale, scale)
-
-            scene.add(donutMesh)
-        }
-
-    }
+// Objects
+const sphere = new THREE.Mesh(
+    new THREE.SphereGeometry(0.5, 32, 32),
+    material
 )
+sphere.position.x = - 1.5
+
+const cube = new THREE.Mesh(
+    new THREE.BoxGeometry(0.75, 0.75, 0.75),
+    material
+)
+
+const torus = new THREE.Mesh(
+    new THREE.TorusGeometry(0.3, 0.2, 32, 64),
+    material
+)
+torus.position.x = 1.5
+
+const plane = new THREE.Mesh(
+    new THREE.PlaneGeometry(5, 5),
+    material
+)
+plane.rotation.x = - Math.PI * 0.5
+plane.position.y = - 0.65
+
+scene.add(sphere, cube, torus, plane)
 
 /**
  * Sizes
@@ -92,7 +68,8 @@ const sizes = {
     height: window.innerHeight
 }
 
-window.addEventListener('resize', () => {
+window.addEventListener('resize', () =>
+{
     // Update sizes
     sizes.width = window.innerWidth
     sizes.height = window.innerHeight
@@ -134,8 +111,18 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
  */
 const clock = new THREE.Clock()
 
-const tick = () => {
+const tick = () =>
+{
     const elapsedTime = clock.getElapsedTime()
+
+    // Update objects
+    sphere.rotation.y = 0.1 * elapsedTime
+    cube.rotation.y = 0.1 * elapsedTime
+    torus.rotation.y = 0.1 * elapsedTime
+
+    sphere.rotation.x = 0.15 * elapsedTime
+    cube.rotation.x = 0.15 * elapsedTime
+    torus.rotation.x = 0.15 * elapsedTime
 
     // Update controls
     controls.update()
