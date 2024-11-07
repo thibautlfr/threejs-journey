@@ -18,12 +18,11 @@ const scene = new THREE.Scene();
 /**
  * House
  */
-// Temporary sphere
-const sphere = new THREE.Mesh(
-  new THREE.SphereGeometry(1, 32, 32),
-  new THREE.MeshStandardMaterial({ roughness: 0.7 })
-);
-scene.add(sphere);
+const houseMeasurements = {
+  width: 4,
+  height: 2.5,
+  depth: 4,
+};
 
 // Floor
 const floor = new THREE.Mesh(
@@ -32,6 +31,62 @@ const floor = new THREE.Mesh(
 );
 floor.rotation.x = -Math.PI * 0.5;
 scene.add(floor);
+
+// House container
+const house = new THREE.Group();
+scene.add(house);
+
+// Walls
+const walls = new THREE.Mesh(
+  new THREE.BoxGeometry(
+    houseMeasurements.width,
+    houseMeasurements.height,
+    houseMeasurements.depth
+  ),
+  new THREE.MeshStandardMaterial()
+);
+walls.position.y += houseMeasurements.height * 0.5; // Move the walls up by half of its height
+house.add(walls);
+
+// Roof
+const roof = new THREE.Mesh(
+  new THREE.ConeGeometry(3.5, 1.5, 4),
+  new THREE.MeshStandardMaterial()
+);
+roof.position.y += houseMeasurements.height + 1.5 * 0.5; // Move the roof up by the height of the walls + half of the roof's height
+roof.rotation.y += Math.PI * 0.25; // Rotate the roof by 45 degrees
+house.add(roof);
+
+// Door
+const door = new THREE.Mesh(
+  new THREE.PlaneGeometry(2.2, 2.2),
+  new THREE.MeshStandardMaterial()
+);
+door.position.y = 1;
+door.position.z = 2 + 0.01; // Move the door to the front of the house
+house.add(door);
+
+// Bushes
+const bushGeometry = new THREE.SphereGeometry(1, 16, 16);
+const bushMaterial = new THREE.MeshStandardMaterial();
+
+const bush1 = new THREE.Mesh(bushGeometry, bushMaterial);
+bush1.scale.setScalar(0.5);
+bush1.position.set(0.8, 0.2, 2.2);
+
+const bush2 = new THREE.Mesh(bushGeometry, bushMaterial);
+bush2.scale.setScalar(0.25);
+bush2.position.set(1.4, 0.1, 2.1);
+
+const bush3 = new THREE.Mesh(bushGeometry, bushMaterial);
+bush3.scale.setScalar(0.4);
+bush3.position.set(-0.8, 0.1, 2.2);
+
+const bush4 = new THREE.Mesh(bushGeometry, bushMaterial);
+bush4.scale.setScalar(0.15);
+bush4.position.set(-1, 0.05, 2.6);
+
+house.add(bush1, bush2, bush3, bush4);
 
 /**
  * Lights
