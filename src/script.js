@@ -1,216 +1,149 @@
-import * as THREE from "three";
-import GUI from "lil-gui";
-import gsap from "gsap";
+import * as THREE from 'three'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import GUI from 'lil-gui'
 
 /**
  * Debug
  */
-const gui = new GUI();
-
-const parameters = {
-  materialColor: "#ffeded",
-};
-
-gui.addColor(parameters, "materialColor").onChange(() => {
-  material.color.set(parameters.materialColor);
-  particlesMaterial.color.set(parameters.materialColor);
-});
+const gui = new GUI()
 
 /**
  * Base
  */
 // Canvas
-const canvas = document.querySelector("canvas.webgl");
+const canvas = document.querySelector('canvas.webgl')
 
 // Scene
-const scene = new THREE.Scene();
+const scene = new THREE.Scene()
 
 /**
- * Objects
+ * Textures
  */
-// Texture
-const textureLoader = new THREE.TextureLoader();
-const gradientTexture = textureLoader.load("/textures/gradients/3.jpg");
-gradientTexture.magFilter = THREE.NearestFilter;
+const textureLoader = new THREE.TextureLoader()
+const cubeTextureLoader = new THREE.CubeTextureLoader()
 
-// Material
-const material = new THREE.MeshToonMaterial({
-  color: parameters.materialColor,
-  gradientMap: gradientTexture,
-});
-
-// Meshes
-const objectsDistance = 4;
-const mesh1 = new THREE.Mesh(new THREE.TorusGeometry(1, 0.4, 16, 60), material);
-const mesh2 = new THREE.Mesh(new THREE.ConeGeometry(1, 2, 32), material);
-const mesh3 = new THREE.Mesh(
-  new THREE.TorusKnotGeometry(0.8, 0.35, 100, 16),
-  material
-);
-
-mesh1.position.y = -objectsDistance * 0;
-mesh2.position.y = -objectsDistance * 1;
-mesh3.position.y = -objectsDistance * 2;
-
-mesh1.position.x = 2;
-mesh2.position.x = -2;
-mesh3.position.x = 2;
-
-scene.add(mesh1, mesh2, mesh3);
-
-const sectionMeshes = [mesh1, mesh2, mesh3];
+const environmentMapTexture = cubeTextureLoader.load([
+    '/textures/environmentMaps/0/px.png',
+    '/textures/environmentMaps/0/nx.png',
+    '/textures/environmentMaps/0/py.png',
+    '/textures/environmentMaps/0/ny.png',
+    '/textures/environmentMaps/0/pz.png',
+    '/textures/environmentMaps/0/nz.png'
+])
 
 /**
- * Particles
+ * Test sphere
  */
-const particlesCount = 200;
-const positions = new Float32Array(particlesCount * 3);
-// const colors = new Float32Array(particlesCount * 3);
+const sphere = new THREE.Mesh(
+    new THREE.SphereGeometry(0.5, 32, 32),
+    new THREE.MeshStandardMaterial({
+        metalness: 0.3,
+        roughness: 0.4,
+        envMap: environmentMapTexture,
+        envMapIntensity: 0.5
+    })
+)
+sphere.castShadow = true
+sphere.position.y = 0.5
+scene.add(sphere)
 
-for (let i = 0; i < particlesCount; i++) {
-  positions[i * 3 + 0] = (Math.random() - 0.5) * 10;
-  positions[i * 3 + 1] =
-    objectsDistance * 0.5 -
-    Math.random() * objectsDistance * sectionMeshes.length;
-  positions[i * 3 + 2] = (Math.random() - 0.5) * 10;
-}
-
-const particlesGeometry = new THREE.BufferGeometry();
-particlesGeometry.setAttribute(
-  "position",
-  new THREE.BufferAttribute(positions, 3)
-);
-
-const particlesMaterial = new THREE.PointsMaterial({
-  size: 0.03,
-  sizeAttenuation: true,
-  color: parameters.materialColor,
-});
-
-const particles = new THREE.Points(particlesGeometry, particlesMaterial);
-scene.add(particles);
+/**
+ * Floor
+ */
+const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(10, 10),
+    new THREE.MeshStandardMaterial({
+        color: '#777777',
+        metalness: 0.3,
+        roughness: 0.4,
+        envMap: environmentMapTexture,
+        envMapIntensity: 0.5
+    })
+)
+floor.receiveShadow = true
+floor.rotation.x = - Math.PI * 0.5
+scene.add(floor)
 
 /**
  * Lights
  */
-const directionalLight = new THREE.DirectionalLight(0xffffff, 3);
-directionalLight.position.set(1, 1, 0);
-scene.add(directionalLight);
+const ambientLight = new THREE.AmbientLight(0xffffff, 2.1)
+scene.add(ambientLight)
+
+const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6)
+directionalLight.castShadow = true
+directionalLight.shadow.mapSize.set(1024, 1024)
+directionalLight.shadow.camera.far = 15
+directionalLight.shadow.camera.left = - 7
+directionalLight.shadow.camera.top = 7
+directionalLight.shadow.camera.right = 7
+directionalLight.shadow.camera.bottom = - 7
+directionalLight.position.set(5, 5, 5)
+scene.add(directionalLight)
 
 /**
  * Sizes
  */
 const sizes = {
-  width: window.innerWidth,
-  height: window.innerHeight,
-};
+    width: window.innerWidth,
+    height: window.innerHeight
+}
 
-window.addEventListener("resize", () => {
-  // Update sizes
-  sizes.width = window.innerWidth;
-  sizes.height = window.innerHeight;
+window.addEventListener('resize', () =>
+{
+    // Update sizes
+    sizes.width = window.innerWidth
+    sizes.height = window.innerHeight
 
-  // Update camera
-  camera.aspect = sizes.width / sizes.height;
-  camera.updateProjectionMatrix();
+    // Update camera
+    camera.aspect = sizes.width / sizes.height
+    camera.updateProjectionMatrix()
 
-  // Update renderer
-  renderer.setSize(sizes.width, sizes.height);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-});
+    // Update renderer
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+})
 
 /**
  * Camera
  */
 // Base camera
-const cameraGroup = new THREE.Group();
-scene.add(cameraGroup);
-const camera = new THREE.PerspectiveCamera(
-  35,
-  sizes.width / sizes.height,
-  0.1,
-  100
-);
-camera.position.z = 6;
-cameraGroup.add(camera);
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
+camera.position.set(- 3, 3, 3)
+scene.add(camera)
+
+// Controls
+const controls = new OrbitControls(camera, canvas)
+controls.enableDamping = true
 
 /**
  * Renderer
  */
 const renderer = new THREE.WebGLRenderer({
-  canvas: canvas,
-  alpha: true,
-});
-renderer.setSize(sizes.width, sizes.height);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-/**
- * Scroll
- */
-let scrollY = window.scrollY;
-let currentSection = 0;
-
-window.addEventListener("scroll", () => {
-  scrollY = window.scrollY;
-  const newSection = Math.round(scrollY / sizes.height);
-
-  if (newSection !== currentSection) {
-    currentSection = newSection;
-
-    gsap.to(sectionMeshes[currentSection].rotation, {
-      duration: 3,
-      ease: "power3.out",
-      x: "+= 3",
-      y: "+= 3",
-    });
-  }
-});
-
-/**
- * Cursor
- */
-const cursor = {
-  x: 0,
-  y: 0,
-};
-
-window.addEventListener("mousemove", (event) => {
-  cursor.x = event.clientX / sizes.width - 0.5;
-  cursor.y = event.clientY / sizes.height - 0.5;
-});
+    canvas: canvas
+})
+renderer.shadowMap.enabled = true
+renderer.shadowMap.type = THREE.PCFSoftShadowMap
+renderer.setSize(sizes.width, sizes.height)
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
 /**
  * Animate
  */
-const clock = new THREE.Clock();
-let previousTime = 0;
+const clock = new THREE.Clock()
 
-const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
-  const deltaTime = elapsedTime - previousTime;
-  previousTime = elapsedTime;
+const tick = () =>
+{
+    const elapsedTime = clock.getElapsedTime()
 
-  // Animate camera
-  camera.position.y = (-scrollY / sizes.height) * objectsDistance;
+    // Update controls
+    controls.update()
 
-  const parallaxX = cursor.x;
-  const parallaxY = -cursor.y;
-  cameraGroup.position.x +=
-    (parallaxX - cameraGroup.position.x) * 5 * deltaTime;
-  cameraGroup.position.y +=
-    (parallaxY - cameraGroup.position.y) * 5 * deltaTime;
+    // Render
+    renderer.render(scene, camera)
 
-  // Animate meshes
-  for (const sectionMesh of sectionMeshes) {
-    sectionMesh.rotation.x += deltaTime * 0.1;
-    sectionMesh.rotation.y += deltaTime * 0.12;
-  }
+    // Call tick again on the next frame
+    window.requestAnimationFrame(tick)
+}
 
-  // Render
-  renderer.render(scene, camera);
-
-  // Call tick again on the next frame
-  window.requestAnimationFrame(tick);
-};
-
-tick();
+tick()
