@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import GUI from 'lil-gui'
-import CANNON from 'cannon'
+import * as CANNON from 'cannon-es'
 
 /**
  * Debug
@@ -20,7 +20,37 @@ debugObject.createSphere = () => {
     )
 }
 
+debugObject.createBox = () => {
+    createBox(
+        Math.random(),
+        Math.random(),
+        Math.random(),
+        {
+            x: (Math.random() - 0.5) * 3,
+            y: 3,
+            z: (Math.random() - 0.5) * 3
+        }
+    )
+}
+
+debugObject.reset = () => {
+    for (const object of objectsToUpdate) {
+        // Remove body from world CANNON
+        object.body.removeEventListener('collide', playHitSound)
+        world.removeBody(object.body)
+
+        // Remove mesh from Three.js
+        scene.remove(object.mesh)
+    }
+
+    // Reset array
+    objectsToUpdate.length = 0
+    // objectsToUpdate.splice(0, objectsToUpdate.length)
+}
+
 gui.add(debugObject, 'createSphere')
+gui.add(debugObject, 'createBox')
+gui.add(debugObject, 'reset')
 
 /**
  * Base
@@ -30,6 +60,23 @@ const canvas = document.querySelector('canvas.webgl')
 
 // Scene
 const scene = new THREE.Scene()
+
+/**
+ * Sounds
+ */
+const hitSound = new Audio('/sounds/hit.mp3')
+
+const playHitSound = (collision) => {
+    const impactStrength = collision.contact.getImpactVelocityAlongNormal()
+    
+    if (impactStrength > 1.5) {
+        // Normalize impactStrength to a value between 0 and 1
+        const normalizedVolume = Math.min(impactStrength / 10, 1)
+        hitSound.volume = normalizedVolume
+        hitSound.currentTime = 0
+        hitSound.play()
+    }
+}
 
 /**
  * Textures
@@ -51,6 +98,8 @@ const environmentMapTexture = cubeTextureLoader.load([
  */
 // World
 const world = new CANNON.World()
+world.broadphase = new CANNON.SAPBroadphase(world)
+world.allowSleep = true
 world.gravity.set(0, -9.82, 0)
 
 // Materials
@@ -164,6 +213,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
  */
 const objectsToUpdate = []
 
+// Sphere
 const sphereGeometry = new THREE.SphereGeometry(1, 32, 32)
 const sphereMaterial = new THREE.MeshStandardMaterial({
     metalness: 0.3,
@@ -189,30 +239,69 @@ const createSphere = (radius, position) => {
         material: defaultMaterial
     })
     body.position.copy(position)
+    body.addEventListener('collide', playHitSound)
+    world.addBody(body)
+
+    // Save in objects to update
+    objectsToUpdate.push({ mesh, body })
+}
+createSphere(0.5, { x: 0, y: 3, z: 0 })
+
+// Box
+const boxGeometry = new THREE.BoxGeometry(1, 1, 1)
+const boxMaterial = new THREE.MeshStandardMaterial({
+    metalness: 0.3,
+    roughness: 0.4,
+    envMap: environmentMapTexture,
+})
+
+const createBox = (width, height, depth, position) => {
+    // Three.js mesh
+    const mesh = new THREE.Mesh(boxGeometry, boxMaterial)
+    mesh.scale.set(width, height, depth)
+    mesh.castShadow = true
+    mesh.position.copy(position)
+    scene.add(mesh)
+
+    // Cannon.js body
+    // * 0.5 because in Cannon.js, the size is half the actual size (center to edge)
+    const shape = new CANNON.Box(new CANNON.Vec3(width * 0.5, height * 0.5, depth * 0.5))
+    const body = new CANNON.Body({
+        mass: 1,
+        position: new CANNON.Vec3(0, 3, 0),
+        shape,
+        material: defaultMaterial
+    })
+    body.position.copy(position)
+
+    body.addEventListener('collide', playHitSound)
+
     world.addBody(body)
 
     // Save in objects to update
     objectsToUpdate.push({ mesh, body })
 }
 
-createSphere(0.5, { x: 0, y: 3, z: 0 })
+
  
 /**
  * Animate
  */
 const clock = new THREE.Clock()
+let oldElapsedTime = 0
 
 const tick = () =>
 {
     const elapsedTime = clock.getElapsedTime()
-
+    const deltaTime = elapsedTime - oldElapsedTime
+    oldElapsedTime = elapsedTime
+    
     // Update physics world
-
-    // world.step(1 / 60, elapsedTime, 3)
-    world.step(1 / 60)
+    world.step(1 / 60, deltaTime, 3)
 
     for (const object of objectsToUpdate) {
         object.mesh.position.copy(object.body.position)
+        object.mesh.quaternion.copy(object.body.quaternion)
     }
 
     // Update controls
