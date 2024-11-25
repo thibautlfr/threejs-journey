@@ -5,7 +5,7 @@ import {
     OrbitControls,
     BakeShadows,
     SoftShadows,
-    RandomizedLight, Sky, Environment, Lightformer
+    RandomizedLight, Sky, Environment, Lightformer, Stage
 } from '@react-three/drei'
 import {useControls} from "leva";
 import {useEffect, useRef} from 'react'
@@ -22,7 +22,7 @@ export default function Experience() {
     useFrame((state, delta) => {
         // const time = state.clock.getElapsedTime()
         // cube.current.position.x = 2 + Math.sin(time)
-        cube.current.rotation.y += delta * 0.2
+        // cube.current.rotation.y += delta * 0.2
     })
 
     const {color, opacity, blur} = useControls('contact shadows', {
@@ -43,21 +43,21 @@ export default function Experience() {
 
     })
 
-    const scene = useThree(state => state.scene)
-    useEffect(() => {
-        scene.environmentIntensity = envMapIntensity
-    }, [envMapIntensity])
+    // const scene = useThree(state => state.scene)
+    // useEffect(() => {
+    //     scene.environmentIntensity = envMapIntensity
+    // }, [envMapIntensity])
 
     return <>
 
-        <Environment
+        {/*<Environment*
             // background
-            ground={ {
-                radius: envMapRadius,
-                height: envMapHeight,
-                scale: envMapScale,
-            }}
-            preset='sunset'
+            // ground={ {
+            //     radius: envMapRadius,
+            //     height: envMapHeight,
+            //     scale: envMapScale,
+            // }}
+            // preset='sunset'
             // resolution={32}
             // files={'./environmentMaps/the_sky_is_on_fire_2k.hdr'}
             // files={[
@@ -81,13 +81,13 @@ export default function Experience() {
             {/*    <planeGeometry/>*/}
             {/*    <meshBasicMaterial color={ [ 100, 0, 0 ] }/>*/}
             {/*</mesh>*/}
-        </Environment>
+        {/*</Environment>*/}
 
 
         {/*<BakeShadows/>*/}
         {/*<SoftShadows size={ 25 } samples={ 10 } focus={ 0 } />*/}
 
-        <color args={['ivory']} attach="background"/>
+        {/*<color args={['ivory']} attach="background"/>*/}
 
         <Perf position="top-left"/>
 
@@ -113,15 +113,15 @@ export default function Experience() {
         {/*    />*/}
         {/*</AccumulativeShadows>*/}
 
-        <ContactShadows
-            position={[0, 0, 0]}
-            scale={10}
-            resolution={512}
-            color={color}
-            opacity={opacity}
-            blur={blur}
-            frames={1}
-        />
+        {/*<ContactShadows*/}
+        {/*    position={[0, 0, 0]}*/}
+        {/*    scale={10}*/}
+        {/*    resolution={512}*/}
+        {/*    color={color}*/}
+        {/*    opacity={opacity}*/}
+        {/*    blur={blur}*/}
+        {/*    frames={1}*/}
+        {/*/>*/}
 
         {/*<directionalLight*/}
         {/*    ref={directionalLight}*/}
@@ -142,19 +142,36 @@ export default function Experience() {
         {/*    sunPosition={sunPosition}*/}
         {/*/>*/}
 
-        <mesh castShadow position-y={1} position-x={-2}>
-            <sphereGeometry/>
-            <meshStandardMaterial color="orange"/>
-        </mesh>
+        {/*<mesh castShadow position-y={1} position-x={-2}>*/}
+        {/*    <sphereGeometry/>*/}
+        {/*    <meshStandardMaterial color="orange"/>*/}
+        {/*</mesh>*/}
 
-        <mesh castShadow position-y={1} ref={cube} position-x={2} scale={1.5}>
-            <boxGeometry/>
-            <meshStandardMaterial color="mediumpurple"/>
-        </mesh>
+        {/*<mesh castShadow position-y={1} ref={cube} position-x={2} scale={1.5}>*/}
+        {/*    <boxGeometry/>*/}
+        {/*    <meshStandardMaterial color="mediumpurple"/>*/}
+        {/*</mesh>*/}
 
         {/*<mesh position-y={-1} position-y={0} rotation-x={-Math.PI * 0.5} scale={10}>*/}
         {/*    <planeGeometry/>*/}
         {/*    <meshStandardMaterial color="greenyellow"/>*/}
         {/*</mesh>*/}
+
+        <Stage
+            shadows={ { type: 'contact', opacity: 0.2, blur: 3 } }
+            environment="sunset"
+            preset="portrait"
+            intensity={ envMapIntensity }
+        >
+            <mesh castShadow position-y={1} position-x={-2}>
+                <sphereGeometry/>
+                <meshStandardMaterial color="orange"/>
+            </mesh>
+
+            <mesh castShadow position-y={1} ref={cube} position-x={2} scale={1.5}>
+                <boxGeometry/>
+                <meshStandardMaterial color="mediumpurple"/>
+            </mesh>
+        </Stage>
     </>
 }
