@@ -3,7 +3,7 @@ import {Perf} from 'r3f-perf'
 import {Suspense} from "react";
 import PlaceHolder from "./PlaceHolder.jsx";
 import Hamburger from "./Hamburger.jsx";
-
+import Fox from "./Fox.jsx";
 
 export default function Experience() {
 
@@ -21,11 +21,13 @@ export default function Experience() {
             <meshStandardMaterial color="greenyellow"/>
         </mesh>
 
-        <Suspense fallback={<PlaceHolder position-y={0.5} scale={[2, 3, 2]}/>}>
-            <Hamburger
-                scale={0.35}
-                position-y={-1}
-            />
-        </Suspense>
+        {/*<Suspense fallback={<PlaceHolder position-y={0.5} scale={[2, 3, 2]}/>}>*/}
+        {/*    <Hamburger*/}
+        {/*        scale={0.35}*/}
+        {/*        position-y={-1}*/}
+        {/*    />*/}
+        {/*</Suspense>*/}
+
+        <Fox />
     </>
 }
