@@ -1,6 +1,15 @@
 import {OrbitControls} from '@react-three/drei'
 import {Perf} from 'r3f-perf'
-import {Bloom, EffectComposer, Glitch, Noise, ToneMapping, Vignette} from "@react-three/postprocessing"
+import {
+    Bloom,
+    DepthOfField,
+    EffectComposer,
+    Glitch,
+    Noise,
+    SSR,
+    ToneMapping,
+    Vignette
+} from "@react-three/postprocessing"
 import {ToneMappingMode, BlendFunction, GlitchMode} from "postprocessing"
 import {useControls} from 'leva'
 
@@ -24,7 +33,7 @@ export default function Experience() {
     }, {collapsed: true})
 
     return <>
-        <color args={['#000000']} attach="background"/>
+        <color args={['#ffffff']} attach="background"/>
 
         <EffectComposer>
             <ToneMapping mode={ToneMappingMode.ACES_FILMIC}/>
@@ -53,12 +62,19 @@ export default function Experience() {
                 />
             }
 
-            <Bloom
-                mipmapBlur
-                luminanceThreshold={0.7}
-                luminanceSmoothing={1}
-                intensity={10}
+            {/*<Bloom*/}
+            {/*    mipmapBlur*/}
+            {/*    luminanceThreshold={0.7}*/}
+            {/*    luminanceSmoothing={1}*/}
+            {/*    intensity={10}*/}
+            {/*/>*/}
+
+            <DepthOfField
+                focusDistance={0.025}
+                focalLength={0.025}
+                bokehScale={6}
             />
+
         </EffectComposer>
 
         <Perf position="top-left"/>
@@ -75,9 +91,8 @@ export default function Experience() {
 
         <mesh castShadow position-x={2} scale={1.5}>
             <boxGeometry/>
-            <meshBasicMaterial
-                color={[ 1.5 * 10, 1 * 10, 4 * 10]}
-                toneMapped={false}
+            <meshStandardMaterial
+                color="mediumpurple"
             />
         </mesh>
 
