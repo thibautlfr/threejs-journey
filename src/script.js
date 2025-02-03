@@ -78,6 +78,32 @@ window.addEventListener("resize", () => {
 });
 
 /**
+ * Mouse
+ */
+const mouse = new THREE.Vector2();
+
+window.addEventListener("mousemove", (_event) => {
+  mouse.x = (_event.clientX / sizes.width) * 2 - 1;
+  mouse.y = -(_event.clientY / sizes.height) * 2 + 1;
+});
+
+window.addEventListener("click", () => {
+  if (currentIntersect) {
+    switch (currentIntersect.object) {
+      case object1:
+        console.log("click on object1");
+        break;
+      case object2:
+        console.log("click on object2");
+        break;
+      case object3:
+        console.log("click on object3");
+        break;
+    }
+  }
+});
+
+/**
  * Camera
  */
 // Base camera
@@ -103,6 +129,8 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
+let currentIntersect = null;
+
 /**
  * Animate
  */
@@ -116,16 +144,33 @@ const tick = () => {
   object2.position.y = Math.sin(elapsedTime * 0.8) * 1.5;
   object3.position.y = Math.sin(elapsedTime * 1.4) * 1.5;
 
-  const rayOrigin = new THREE.Vector3(-3, 0, 0);
-  const rayDirection = new THREE.Vector3(10, 0, 0).normalize();
-  raycaster.set(rayOrigin, rayDirection);
+  // Cast a ray
+  //   const rayOrigin = new THREE.Vector3(-3, 0, 0);
+  //   const rayDirection = new THREE.Vector3(10, 0, 0).normalize();
+  //   raycaster.set(rayOrigin, rayDirection);
 
+  // With mouse
+  raycaster.setFromCamera(mouse, camera);
   const intersects = raycaster.intersectObjects([object1, object2, object3]);
+
   object1.material.color.set("#ff0000");
   object2.material.color.set("#ff0000");
   object3.material.color.set("#ff0000");
+
   for (const intersect of intersects) {
     intersect.object.material.color.set("#0000ff");
+  }
+
+  if (intersects.length) {
+    if (currentIntersect === null) {
+      console.log("mouse enter");
+    }
+    currentIntersect = intersects[0];
+  } else {
+    if (currentIntersect) {
+      console.log("mouse leave");
+    }
+    currentIntersect = null;
   }
 
   // Update controls
