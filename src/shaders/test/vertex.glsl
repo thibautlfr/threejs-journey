@@ -1,11 +1,5 @@
-uniform mat4 projectionMatrix; // provided by Three.js
-uniform mat4 viewMatrix; // provided by Three.js
-uniform mat4 modelMatrix; // provided by Three.js
 uniform vec2 uFrequency; // our custom uniform
 uniform float uTime; // our custom uniform
-
-attribute vec3 position;
-attribute vec2 uv;
 
 varying vec2 vUv;
 varying float vElevation;

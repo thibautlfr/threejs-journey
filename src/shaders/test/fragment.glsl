@@ -1,5 +1,3 @@
-precision mediump float;
-
 uniform vec3 uColor; // our custom uniform
 uniform sampler2D uTexture; // our custom uniform
 
