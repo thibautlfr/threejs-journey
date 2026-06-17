@@ -1,12 +1,7 @@
 import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import GUI from 'lil-gui'
-
-import vertexCommon from './shaders/modifiedMaterial/vertex_common.glsl?raw'
-import vertexBeginnormal from './shaders/modifiedMaterial/vertex_beginnormal.glsl?raw'
-import vertexBeginMaterial from './shaders/modifiedMaterial/vertex_begin.glsl?raw'
-import vertexBeginDepth from './shaders/modifiedDepthMaterial/vertex_begin.glsl?raw'
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 
 /**
  * Base
@@ -14,147 +9,15 @@ import vertexBeginDepth from './shaders/modifiedDepthMaterial/vertex_begin.glsl?
 // Debug
 const gui = new GUI()
 
-const debugObject = {
-    uTwistFrequency: 0.9
-}
-
 // Canvas
 const canvas = document.querySelector('canvas.webgl')
 
 // Scene
 const scene = new THREE.Scene()
 
-/**
- * Loaders
- */
+// Loaders
 const textureLoader = new THREE.TextureLoader()
 const gltfLoader = new GLTFLoader()
-const cubeTextureLoader = new THREE.CubeTextureLoader()
-
-/**
- * Update all materials
- */
-const updateAllMaterials = () =>
-{
-    scene.traverse((child) =>
-    {
-        if(child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial)
-        {
-            child.material.envMapIntensity = 1
-            child.material.needsUpdate = true
-            child.castShadow = true
-            child.receiveShadow = true
-        }
-    })
-}
-
-/**
- * Plane
- */
-const plane = new THREE.Mesh(
-  new THREE.PlaneGeometry(15, 15, 15),
-  new THREE.MeshStandardMaterial()
-)
-
-plane.rotation.y = Math.PI
-plane.position.y = -5
-plane.position.z = 5
-scene.add(plane)
-
-
-
-/**
- * Environment map
- */
-const environmentMap = cubeTextureLoader.load([
-    '/textures/environmentMaps/0/px.jpg',
-    '/textures/environmentMaps/0/nx.jpg',
-    '/textures/environmentMaps/0/py.jpg',
-    '/textures/environmentMaps/0/ny.jpg',
-    '/textures/environmentMaps/0/pz.jpg',
-    '/textures/environmentMaps/0/nz.jpg'
-])
-
-scene.background = environmentMap
-scene.environment = environmentMap
-
-/**
- * Material
- */
-
-// Textures
-const mapTexture = textureLoader.load('/models/LeePerrySmith/color.jpg')
-mapTexture.colorSpace = THREE.SRGBColorSpace
-const normalTexture = textureLoader.load('/models/LeePerrySmith/normal.jpg')
-
-// Material
-const material = new THREE.MeshStandardMaterial( {
-    map: mapTexture,
-    normalMap: normalTexture
-})
-
-const depthMaterial = new THREE.MeshDepthMaterial({
-    depthPacking: THREE.RGBADepthPacking
-})
-
-const customUniforms = {
-    uTime: { value: 0 },
-    uTwistFrequency: { value: debugObject.uTwistFrequency }
-}
-
-const shaderFolder = gui.addFolder('Shader')
-shaderFolder
-    .add(debugObject, 'uTwistFrequency')
-    .min(0).max(10).step(0.001)
-    .name('Twist Frequency')
-    .onChange((value) => { customUniforms.uTwistFrequency.value = value })
-
-material.onBeforeCompile = (shader) => {
-    shader.uniforms.uTime = customUniforms.uTime
-    shader.uniforms.uTwistFrequency = customUniforms.uTwistFrequency
-
-    shader.vertexShader = shader.vertexShader.replace('#include <common>', vertexCommon)
-    shader.vertexShader = shader.vertexShader.replace('#include <beginnormal_vertex>', vertexBeginnormal)
-    shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', vertexBeginMaterial)
-}
-
-depthMaterial.onBeforeCompile = (shader) => {
-    shader.uniforms.uTime = customUniforms.uTime
-    shader.uniforms.uTwistFrequency = customUniforms.uTwistFrequency
-
-    shader.vertexShader = shader.vertexShader.replace('#include <common>', vertexCommon)
-    shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', vertexBeginDepth)
-}
-
-/**
- * Models
- */
-gltfLoader.load(
-    '/models/LeePerrySmith/LeePerrySmith.glb',
-    (gltf) =>
-    {
-        // Model
-        const mesh = gltf.scene.children[0]
-        mesh.rotation.y = Math.PI * 0.5
-        mesh.material = material
-        mesh.customDepthMaterial = depthMaterial
-        scene.add(mesh)
-
-        // Update materials
-        updateAllMaterials()
-    }
-)
-
-/**
- * Lights
- */
-const directionalLight = new THREE.DirectionalLight('#ffffff', 3)
-directionalLight.castShadow = true
-directionalLight.shadow.mapSize.set(1024, 1024)
-directionalLight.shadow.camera.far = 15
-directionalLight.shadow.normalBias = 0.05
-directionalLight.position.set(0.25, 2, - 2.25)
-scene.add(directionalLight)
 
 /**
  * Sizes
@@ -183,12 +46,15 @@ window.addEventListener('resize', () =>
  * Camera
  */
 // Base camera
-const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-camera.position.set(4, 1, - 4)
+const camera = new THREE.PerspectiveCamera(25, sizes.width / sizes.height, 0.1, 100)
+camera.position.x = 8
+camera.position.y = 10
+camera.position.z = 12
 scene.add(camera)
 
 // Controls
 const controls = new OrbitControls(camera, canvas)
+controls.target.y = 3
 controls.enableDamping = true
 
 /**
@@ -198,12 +64,20 @@ const renderer = new THREE.WebGLRenderer({
     canvas: canvas,
     antialias: true
 })
-renderer.shadowMap.enabled = true
-renderer.shadowMap.type = THREE.PCFShadowMap
-renderer.toneMapping = THREE.ACESFilmicToneMapping
-renderer.toneMappingExposure = 1
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+/**
+ * Model
+ */
+gltfLoader.load(
+    './bakedModel.glb',
+    (gltf) =>
+    {
+        gltf.scene.getObjectByName('baked').material.map.anisotropy = 8
+        scene.add(gltf.scene)
+    }
+)
 
 /**
  * Animate
@@ -213,9 +87,6 @@ const clock = new THREE.Clock()
 const tick = () =>
 {
     const elapsedTime = clock.getElapsedTime()
-
-    // Update custom uniforms
-    customUniforms.uTime.value = elapsedTime;
 
     // Update controls
     controls.update()
