@@ -3,11 +3,20 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import GUI from 'lil-gui'
 
+import vertexCommon from './shaders/modifiedMaterial/vertex_common.glsl?raw'
+import vertexBeginnormal from './shaders/modifiedMaterial/vertex_beginnormal.glsl?raw'
+import vertexBeginMaterial from './shaders/modifiedMaterial/vertex_begin.glsl?raw'
+import vertexBeginDepth from './shaders/modifiedDepthMaterial/vertex_begin.glsl?raw'
+
 /**
  * Base
  */
 // Debug
 const gui = new GUI()
+
+const debugObject = {
+    uTwistFrequency: 0.9
+}
 
 // Canvas
 const canvas = document.querySelector('canvas.webgl')
@@ -89,75 +98,32 @@ const depthMaterial = new THREE.MeshDepthMaterial({
 })
 
 const customUniforms = {
-    uTime: { value: 0 }
+    uTime: { value: 0 },
+    uTwistFrequency: { value: debugObject.uTwistFrequency }
 }
+
+const shaderFolder = gui.addFolder('Shader')
+shaderFolder
+    .add(debugObject, 'uTwistFrequency')
+    .min(0).max(10).step(0.001)
+    .name('Twist Frequency')
+    .onChange((value) => { customUniforms.uTwistFrequency.value = value })
 
 material.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = customUniforms.uTime
+    shader.uniforms.uTwistFrequency = customUniforms.uTwistFrequency
 
-    shader.vertexShader = shader.vertexShader.replace(
-      '#include <common>',
-      `
-        #include <common>
-        
-        uniform float uTime;
-        
-        mat2 get2dRotateMatrix(float _angle)
-        {
-            return mat2(cos(_angle), - sin(_angle), sin(_angle), cos(_angle));
-        }
-      `
-    )
-
-    shader.vertexShader = shader.vertexShader.replace(
-      '#include <beginnormal_vertex>',
-      `
-        #include <beginnormal_vertex>
-        
-        float angle = (position.y + uTime) * 0.9;
-        mat2 rotateMatrix = get2dRotateMatrix(angle);
-        
-        objectNormal.xz =  rotateMatrix * objectNormal.xz ;
-      `
-    )
-
-    shader.vertexShader = shader.vertexShader.replace(
-      '#include <begin_vertex>',
-      `
-        #include <begin_vertex>
-        
-        transformed.xz = rotateMatrix * transformed.xz;
-      `
-    )
+    shader.vertexShader = shader.vertexShader.replace('#include <common>', vertexCommon)
+    shader.vertexShader = shader.vertexShader.replace('#include <beginnormal_vertex>', vertexBeginnormal)
+    shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', vertexBeginMaterial)
 }
 
 depthMaterial.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = customUniforms.uTime
-    shader.vertexShader = shader.vertexShader.replace(
-      '#include <common>',
-      `
-        #include <common>
-        
-        uniform float uTime;
-        
-        mat2 get2dRotateMatrix(float _angle)
-        {
-            return mat2(cos(_angle), - sin(_angle), sin(_angle), cos(_angle));
-        }
-      `
-    )
+    shader.uniforms.uTwistFrequency = customUniforms.uTwistFrequency
 
-    shader.vertexShader = shader.vertexShader.replace(
-      '#include <begin_vertex>',
-      `
-        #include <begin_vertex>
-        
-        float angle = (position.y + uTime) * 0.9;
-        mat2 rotateMatrix = get2dRotateMatrix(angle);
-        
-        transformed.xz = rotateMatrix * transformed.xz;
-      `
-    )
+    shader.vertexShader = shader.vertexShader.replace('#include <common>', vertexCommon)
+    shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', vertexBeginDepth)
 }
 
 /**
