@@ -2,8 +2,6 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import GUI from 'lil-gui'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
-import coffeeSmokeVertexShader from './shaders/coffeeSmoke/vertex.glsl'
-import coffeeSmokeFragmentShader from './shaders/coffeeSmoke/fragment.glsl'
 
 /**
  * Base
@@ -18,7 +16,6 @@ const canvas = document.querySelector('canvas.webgl')
 const scene = new THREE.Scene()
 
 // Loaders
-const textureLoader = new THREE.TextureLoader()
 const gltfLoader = new GLTFLoader()
 
 /**
@@ -49,66 +46,73 @@ window.addEventListener('resize', () =>
  */
 // Base camera
 const camera = new THREE.PerspectiveCamera(25, sizes.width / sizes.height, 0.1, 100)
-camera.position.x = 8
-camera.position.y = 10
-camera.position.z = 12
+camera.position.set(7, 7, 7)
 scene.add(camera)
 
 // Controls
 const controls = new OrbitControls(camera, canvas)
-controls.target.y = 3
 controls.enableDamping = true
 
 /**
  * Renderer
  */
+const rendererParameters = {}
+rendererParameters.clearColor = '#1d1f2a'
+
 const renderer = new THREE.WebGLRenderer({
     canvas: canvas,
     antialias: true
 })
+renderer.setClearColor(rendererParameters.clearColor)
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
+gui
+    .addColor(rendererParameters, 'clearColor')
+    .onChange(() =>
+    {
+        renderer.setClearColor(rendererParameters.clearColor)
+    })
+
 /**
- * Model
+ * Material
  */
+const material = new THREE.MeshBasicMaterial()
+
+/**
+ * Objects
+ */
+// Torus knot
+const torusKnot = new THREE.Mesh(
+    new THREE.TorusKnotGeometry(0.6, 0.25, 128, 32),
+    material
+)
+torusKnot.position.x = 3
+scene.add(torusKnot)
+
+// Sphere
+const sphere = new THREE.Mesh(
+    new THREE.SphereGeometry(),
+    material
+)
+sphere.position.x = - 3
+scene.add(sphere)
+
+// Suzanne
+let suzanne = null
 gltfLoader.load(
-    './bakedModel.glb',
+    './suzanne.glb',
     (gltf) =>
     {
-        gltf.scene.getObjectByName('baked').material.map.anisotropy = 8
-        scene.add(gltf.scene)
+        suzanne = gltf.scene
+        suzanne.traverse((child) =>
+        {
+            if(child.isMesh)
+                child.material = material
+        })
+        scene.add(suzanne)
     }
 )
-
-/**
- * Smoke
- */
-const smokeGeometry = new THREE.PlaneGeometry(1, 1, 16, 64)
-smokeGeometry.translate(0, 0.5, 0)
-smokeGeometry.scale(1.5, 6, 1.5)
-
-// Perlin texture
-const perlinTexture = textureLoader.load('./perlin.png')
-perlinTexture.wrapS = THREE.RepeatWrapping
-perlinTexture.wrapT = THREE.RepeatWrapping
-
-const smokeMaterial = new THREE.ShaderMaterial({
-    vertexShader: coffeeSmokeVertexShader,
-    fragmentShader: coffeeSmokeFragmentShader,
-    side: THREE.DoubleSide,
-    uniforms: {
-        uTime: new THREE.Uniform(0),
-        uPerlinTexture: new THREE.Uniform(perlinTexture),
-    },
-    transparent: true,
-    depthWrite: false,
-    // wireframe: true,
-})
-
-const smoke = new THREE.Mesh(smokeGeometry, smokeMaterial)
-smoke.position.y = 1.83
-scene.add(smoke)
 
 /**
  * Animate
@@ -119,8 +123,18 @@ const tick = () =>
 {
     const elapsedTime = clock.getElapsedTime()
 
-    // Update smoke
-    smokeMaterial.uniforms.uTime.value = elapsedTime;
+    // Rotate objects
+    if(suzanne)
+    {
+        suzanne.rotation.x = - elapsedTime * 0.1
+        suzanne.rotation.y = elapsedTime * 0.2
+    }
+
+    sphere.rotation.x = - elapsedTime * 0.1
+    sphere.rotation.y = elapsedTime * 0.2
+
+    torusKnot.rotation.x = - elapsedTime * 0.1
+    torusKnot.rotation.y = elapsedTime * 0.2
 
     // Update controls
     controls.update()
