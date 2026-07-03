@@ -1,15 +1,15 @@
 import * as THREE from 'three'
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import GUI from 'lil-gui'
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
-import shadingVertexShader from './shaders/shading/vertex.glsl'
-import shadingFragmentShader from './shaders/shading/fragment.glsl'
+import waterVertexShader from './shaders/water/vertex.glsl'
+import waterFragmentShader from './shaders/water/fragment.glsl'
 
 /**
  * Base
  */
 // Debug
-const gui = new GUI()
+const gui = new GUI({ width: 340 })
+const debugObject = {}
 
 // Canvas
 const canvas = document.querySelector('canvas.webgl')
@@ -17,16 +17,67 @@ const canvas = document.querySelector('canvas.webgl')
 // Scene
 const scene = new THREE.Scene()
 
-// Loaders
-const gltfLoader = new GLTFLoader()
+/**
+ * Water
+ */
+// Geometry
+const waterGeometry = new THREE.PlaneGeometry(2, 2, 512, 512)
+
+// Colors
+debugObject.depthColor = '#186691'
+debugObject.surfaceColor = '#9bd8ff'
+
+gui.addColor(debugObject, 'depthColor').onChange(() => { waterMaterial.uniforms.uDepthColor.value.set(debugObject.depthColor) })
+gui.addColor(debugObject, 'surfaceColor').onChange(() => { waterMaterial.uniforms.uSurfaceColor.value.set(debugObject.surfaceColor) })
+
+// Material
+const waterMaterial = new THREE.ShaderMaterial({
+    vertexShader: waterVertexShader,
+    fragmentShader: waterFragmentShader,
+    uniforms:
+    {
+        uTime: { value: 0 },
+        
+        uBigWavesElevation: { value: 0.2 },
+        uBigWavesFrequency: { value: new THREE.Vector2(4, 1.5) },
+        uBigWavesSpeed: { value: 0.75 },
+
+        uSmallWavesElevation: { value: 0.15 },
+        uSmallWavesFrequency: { value: 3 },
+        uSmallWavesSpeed: { value: 0.2 },
+        uSmallIterations: { value: 4 },
+
+        uDepthColor: { value: new THREE.Color(debugObject.depthColor) },
+        uSurfaceColor: { value: new THREE.Color(debugObject.surfaceColor) },
+        uColorOffset: { value: 0.08 },
+        uColorMultiplier: { value: 5 }
+    }
+})
+
+gui.add(waterMaterial.uniforms.uBigWavesElevation, 'value').min(0).max(1).step(0.001).name('uBigWavesElevation')
+gui.add(waterMaterial.uniforms.uBigWavesFrequency.value, 'x').min(0).max(10).step(0.001).name('uBigWavesFrequencyX')
+gui.add(waterMaterial.uniforms.uBigWavesFrequency.value, 'y').min(0).max(10).step(0.001).name('uBigWavesFrequencyY')
+gui.add(waterMaterial.uniforms.uBigWavesSpeed, 'value').min(0).max(4).step(0.001).name('uBigWavesSpeed')
+
+gui.add(waterMaterial.uniforms.uSmallWavesElevation, 'value').min(0).max(1).step(0.001).name('uSmallWavesElevation')
+gui.add(waterMaterial.uniforms.uSmallWavesFrequency, 'value').min(0).max(30).step(0.001).name('uSmallWavesFrequency')
+gui.add(waterMaterial.uniforms.uSmallWavesSpeed, 'value').min(0).max(4).step(0.001).name('uSmallWavesSpeed')
+gui.add(waterMaterial.uniforms.uSmallIterations, 'value').min(0).max(5).step(1).name('uSmallIterations')
+
+gui.add(waterMaterial.uniforms.uColorOffset, 'value').min(0).max(1).step(0.001).name('uColorOffset')
+gui.add(waterMaterial.uniforms.uColorMultiplier, 'value').min(0).max(10).step(0.001).name('uColorMultiplier')
+
+// Mesh
+const water = new THREE.Mesh(waterGeometry, waterMaterial)
+water.rotation.x = - Math.PI * 0.5
+scene.add(water)
 
 /**
  * Sizes
  */
 const sizes = {
     width: window.innerWidth,
-    height: window.innerHeight,
-    pixelRatio: Math.min(window.devicePixelRatio, 2)
+    height: window.innerHeight
 }
 
 window.addEventListener('resize', () =>
@@ -34,7 +85,6 @@ window.addEventListener('resize', () =>
     // Update sizes
     sizes.width = window.innerWidth
     sizes.height = window.innerHeight
-    sizes.pixelRatio = Math.min(window.devicePixelRatio, 2)
 
     // Update camera
     camera.aspect = sizes.width / sizes.height
@@ -42,17 +92,15 @@ window.addEventListener('resize', () =>
 
     // Update renderer
     renderer.setSize(sizes.width, sizes.height)
-    renderer.setPixelRatio(sizes.pixelRatio)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 })
 
 /**
  * Camera
  */
 // Base camera
-const camera = new THREE.PerspectiveCamera(25, sizes.width / sizes.height, 0.1, 100)
-camera.position.x = 7
-camera.position.y = 7
-camera.position.z = 7
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
+camera.position.set(1, 1, 1)
 scene.add(camera)
 
 // Controls
@@ -63,101 +111,10 @@ controls.enableDamping = true
  * Renderer
  */
 const renderer = new THREE.WebGLRenderer({
-    canvas: canvas,
-    antialias: true
+    canvas: canvas
 })
-// renderer.toneMapping = THREE.ACESFilmicToneMapping
-// renderer.toneMappingExposure = 3
 renderer.setSize(sizes.width, sizes.height)
-renderer.setPixelRatio(sizes.pixelRatio)
-
-/**
- * Material
- */
-const materialParameters = {}
-materialParameters.color = '#ffffff'
-
-const material = new THREE.ShaderMaterial({
-    vertexShader: shadingVertexShader,
-    fragmentShader: shadingFragmentShader,
-    uniforms:
-    {
-        uColor: new THREE.Uniform(new THREE.Color(materialParameters.color)),
-    }
-})
-
-gui
-    .addColor(materialParameters, 'color')
-    .onChange(() =>
-    {
-        material.uniforms.uColor.value.set(materialParameters.color)
-    })
-
-/**
- * Objects
- */
-// Torus knot
-const torusKnot = new THREE.Mesh(
-    new THREE.TorusKnotGeometry(0.6, 0.25, 128, 32),
-    material
-)
-torusKnot.position.x = 3
-scene.add(torusKnot)
-
-// Sphere
-const sphere = new THREE.Mesh(
-    new THREE.SphereGeometry(),
-    material
-)
-sphere.position.x = - 3
-scene.add(sphere)
-
-// Suzanne
-let suzanne = null
-gltfLoader.load(
-    './suzanne.glb',
-    (gltf) =>
-    {
-        suzanne = gltf.scene
-        suzanne.traverse((child) =>
-        {
-            if(child.isMesh)
-                child.material = material
-        })
-        scene.add(suzanne)
-    }
-)
-
-/**
- * Light helpers
- */
-
-// Directional Light Helper
-const directionalLightHelper = new THREE.Mesh(
-  new THREE.PlaneGeometry(),
-  new THREE.MeshBasicMaterial()
-)
-directionalLightHelper.material.color.setRGB(0.1, 0.1, 1)
-directionalLightHelper.material.side = THREE.DoubleSide
-directionalLightHelper.position.set(0, 0, 3)
-scene.add(directionalLightHelper)
-
-// Point Lights Helper
-const pointLightHelper = new THREE.Mesh(
-  new THREE.IcosahedronGeometry(0.1, 2),
-  new THREE.MeshBasicMaterial()
-)
-pointLightHelper.material.color.setRGB(1.0, 0.1, 0.1)
-pointLightHelper.position.set(0, 2.5, 0)
-scene.add(pointLightHelper)
-
-const pointLightHelper2 = new THREE.Mesh(
-  new THREE.IcosahedronGeometry(0.1, 2),
-  new THREE.MeshBasicMaterial()
-)
-pointLightHelper2.material.color.setRGB(0.1, 1.0, 0.5)
-pointLightHelper2.position.set(2, 2, 2)
-scene.add(pointLightHelper2)
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
 /**
  * Animate
@@ -168,18 +125,8 @@ const tick = () =>
 {
     const elapsedTime = clock.getElapsedTime()
 
-    // Rotate objects
-    if(suzanne)
-    {
-        suzanne.rotation.x = - elapsedTime * 0.1
-        suzanne.rotation.y = elapsedTime * 0.2
-    }
-
-    sphere.rotation.x = - elapsedTime * 0.1
-    sphere.rotation.y = elapsedTime * 0.2
-
-    torusKnot.rotation.x = - elapsedTime * 0.1
-    torusKnot.rotation.y = elapsedTime * 0.2
+    // Water
+    waterMaterial.uniforms.uTime.value = elapsedTime
 
     // Update controls
     controls.update()
