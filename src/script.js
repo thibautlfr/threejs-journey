@@ -17,15 +17,22 @@ const canvas = document.querySelector('canvas.webgl')
 // Scene
 const scene = new THREE.Scene()
 
+// Axes Helper
+// const axesHelper = new THREE.AxesHelper()
+// axesHelper.position.y += 0.25;
+// scene.add(axesHelper);
+
 /**
  * Water
  */
 // Geometry
 const waterGeometry = new THREE.PlaneGeometry(2, 2, 512, 512)
+waterGeometry.deleteAttribute('normal');
+waterGeometry.deleteAttribute('uv');
 
 // Colors
-debugObject.depthColor = '#186691'
-debugObject.surfaceColor = '#9bd8ff'
+debugObject.depthColor = '#ff4000'
+debugObject.surfaceColor = '#151c37'
 
 gui.addColor(debugObject, 'depthColor').onChange(() => { waterMaterial.uniforms.uDepthColor.value.set(debugObject.depthColor) })
 gui.addColor(debugObject, 'surfaceColor').onChange(() => { waterMaterial.uniforms.uSurfaceColor.value.set(debugObject.surfaceColor) })
@@ -49,8 +56,8 @@ const waterMaterial = new THREE.ShaderMaterial({
 
         uDepthColor: { value: new THREE.Color(debugObject.depthColor) },
         uSurfaceColor: { value: new THREE.Color(debugObject.surfaceColor) },
-        uColorOffset: { value: 0.08 },
-        uColorMultiplier: { value: 5 }
+        uColorOffset: { value: 0.925 },
+        uColorMultiplier: { value: 1 }
     }
 })
 
@@ -113,6 +120,7 @@ controls.enableDamping = true
 const renderer = new THREE.WebGLRenderer({
     canvas: canvas
 })
+renderer.toneMapping = THREE.ACESFilmicToneMapping
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
