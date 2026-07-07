@@ -80,6 +80,24 @@ water.rotation.x = - Math.PI * 0.5
 scene.add(water)
 
 /**
+ * Buoy
+ */
+const buoyGeometry = new THREE.TorusGeometry(0.06, 0.02, 16, 32)
+const buoyMaterial = new THREE.MeshBasicMaterial({ color: '#ff2200' })
+const buoy = new THREE.Mesh(buoyGeometry, buoyMaterial)
+buoy.rotation.x = - Math.PI * 0.5
+buoy.position.set(0.25, 0, 0.25)
+scene.add(buoy)
+
+const getWaveElevation = (x, z, time) =>
+{
+    const u = waterMaterial.uniforms
+    return Math.sin(x * u.uBigWavesFrequency.value.x + time * u.uBigWavesSpeed.value)
+         * Math.sin(z * u.uBigWavesFrequency.value.y + time * u.uBigWavesSpeed.value)
+         * u.uBigWavesElevation.value
+}
+
+/**
  * Sizes
  */
 const sizes = {
@@ -135,6 +153,11 @@ const tick = () =>
 
     // Water
     waterMaterial.uniforms.uTime.value = elapsedTime
+
+    // Buoy
+    const buoyX = buoy.position.x
+    const buoyZ = buoy.position.z
+    buoy.position.y = getWaveElevation(buoyX, buoyZ, elapsedTime)
 
     // Update controls
     controls.update()

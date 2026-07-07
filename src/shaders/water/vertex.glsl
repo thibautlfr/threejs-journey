@@ -45,7 +45,7 @@ void main()
     // Compute normal
     vec3 toA = normalize(modelPositionA - modelPosition.xyz);
     vec3 toB = normalize(modelPositionB - modelPosition.xyz);
-    vec3 computedNormal = cross(toB, toA);
+    vec3 computedNormal = cross(toA, toB);
 
     // Final position
     vec4 viewPosition = viewMatrix * modelPosition;
